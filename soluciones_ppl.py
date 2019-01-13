@@ -10,18 +10,34 @@ if not os.getcwd() in sys.path:
 from ppl_sin_motoboy import get_solution
 
 dataset = feather.read_dataframe("datasets/train.feather")
-soluciones = pd.DataFrame()
-for n in range(2,10):
-    soluciones = soluciones.append(get_solution(dataset,n,1,0.2,0.2,1,0.1))
 
-soluciones = soluciones.reset_index(drop=True)
-soluciones.to_feather("solutions/param_ppl.feather")
 
+def callback(x):
+    soluciones.append(x)
+
+pool = multiprocessing.Pool(processes=multiprocessing.cpu_count(), maxtasksperchild=1)
+soluciones = []
+for n in range(3,31):
+    res = pool.apply_async(get_solution,kwds={"dataset" : dataset,
+                                              "periodo_restock" : n,
+                                              "restock_lag" : 2,
+                                              "factor_dcto_anual" : 0.5,
+                                              "margen" : 0.20,
+                                              "costo_fijo" : 20,
+                                              "costo_variable" : 0.1,
+                                              "solver":"coin"},
+    callback= callback)
+
+pool.close()
+pool.join()
+
+soluciones = pd.concat(soluciones)
 margen = soluciones.groupby("restock").agg({"objetivo":"mean"}).reset_index(drop=False)
 sns.lineplot("restock","objetivo",data = margen)
 plt.show()
 
-optimo = soluciones.loc[soluciones.restock == 6]
+soluciones = soluciones.reset_index(drop=True)
+soluciones.to_feather("solutions/param_ppl.feather")
 
 
 

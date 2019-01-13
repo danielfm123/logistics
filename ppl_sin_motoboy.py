@@ -40,31 +40,31 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     # Problema
     prob = LpProblem("Perdida",LpMaximize)
 
-    print("Funcion Objetivo")
+    #print("Funcion Objetivo")
     prob += - factor_dcto_diario * lpSum([stock[p][c] * dataset.loc[p, c]["price"] for p, c in itertools.product(period, skues)])\
             - costo_variable * lpSum( orden ) \
             - costo_fijo * len(numero_orden) \
             + margen * lpSum([venta_real[p][c] * dataset.loc[p, c]["price"] for p, c in itertools.product(period, skues)])
 
-    print("Venta Real")
+    #print("Venta Real")
     for p, c in itertools.product(period, skues):
         prob += venta_real[p][c] <= dataset.loc[p, c]["demand"]
         prob += venta_real[p][c] <= stock[p][c]
 
-    print("Tamano Ordenes")
+    #print("Tamano Ordenes")
     N = numero_orden
     P = period
     for n, c in itertools.product(range(len(numero_orden)), skues):
         prob += orden[N[n]][c] == nivel_restock[c] - stock[N[n] * periodo_restock - restock_lag][c]
 
-    print("Consistencia de Stock")
+    #print("Consistencia de Stock")
     for p, c in itertools.product(range(len(period)), skues):
         if P[p] % periodo_restock == 0:
             prob += stock[P[p]][c] == stock[P[p-1]][c] - dataset.loc[P[p-1], c]["demand"] + orden[int(P[p] / periodo_restock)][c]
         else:
             prob += stock[P[p]][c] == stock[P[p-1]][c] - dataset.loc[P[p-1], c]["demand"]
 
-    print("resolviendo")
+    #print("resolviendo")
     if(solver == "coin"):
         solver_cmd = solvers.COIN_CMD(threads = 1,msg=0, presolve=True)
     elif(solver == "glpk"):
@@ -76,7 +76,7 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     print("Status:", LpStatus[prob.status])
     print(value(prob.objective))
 
-    print("Generando Detalles")
+    #print("Generando Detalles")
     #compilado = []
     #for p, c in itertools.product(period, [133185]):
     #for p, c in itertools.product(period, skues):
