@@ -3,7 +3,10 @@ import pandas as pd
 import itertools
 import feather
 import seaborn as sns
+import sys,os
 import matplotlib.pyplot as plt
+if not os.getcwd() in sys.path:
+    sys.path.append(os.getcwd())
 from ppl_sin_motoboy import get_solution
 
 dataset = feather.read_dataframe("datasets/train.feather")
