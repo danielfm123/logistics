@@ -150,6 +150,7 @@ for( n in 1:length(simulaciones)){
 costo_logistica
 margen_ventas
 costo_inventario
+margen
 
-aux = compilado %>% group_by(restock,tipo) %>%  summarise(margen = mean(costo_inventario))
+aux = compilado %>% group_by(restock,tipo) %>%  summarise(margen = mean(margen))
 ggplot(aux,aes(restock,margen,color = tipo, group=tipo)) + geom_line()

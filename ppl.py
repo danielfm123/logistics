@@ -1,10 +1,10 @@
 from pulp import *
 import pandas as pd
 import feather
-import itertools
-import multiprocessing
 import numpy as np
-import collections
+import multiprocessing
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 #from functions import dataset_ppl
 #dataset = dataset_ppl.make_dataset(size = 30)
@@ -52,10 +52,9 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
         prob += venta_real[p][c] <= stock[p][c]
 
     #print("Tamano Ordenes")
-    N = numero_orden
     P = period
-    for n, c in itertools.product(range(len(numero_orden)), skues):
-        prob += orden[N[n]][c] == nivel_restock[c] - stock[N[n] * periodo_restock - restock_lag][c]
+    for n, c in itertools.product(numero_orden, skues):
+        prob += orden[n][c] == nivel_restock[c] - stock[ P[n * periodo_restock - restock_lag] ][c]
 
     #print("Consistencia de Stock")
     for p, c in itertools.product(range(len(period)), skues):
@@ -108,4 +107,36 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     compilado = pd.DataFrame(compilado)
 
     return(compilado)
+
+# Ejecutar el PPL
+
+if __name__ == "__main__":
+    dataset = feather.read_dataframe("datasets/train.feather")
+
+    def callback(x):
+        soluciones.append(x)
+
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count(), maxtasksperchild=1)
+    soluciones = []
+    for n in range(2,31):
+        res = pool.apply_async(get_solution,kwds={"dataset" : dataset,
+                                                  "periodo_restock" : n,
+                                                  "restock_lag" : 2,
+                                                  "factor_dcto_anual" : 0.5,
+                                                  "margen" : 0.20,
+                                                  "costo_fijo" : 20,
+                                                  "costo_variable" : 0.1,
+                                                  "solver":"coin"},
+        callback= callback)
+
+    pool.close()
+    pool.join()
+
+    soluciones = pd.concat(soluciones)
+    margen = soluciones.groupby("restock").agg({"objetivo":"mean"}).reset_index(drop=False)
+    sns.lineplot("restock","objetivo",data = margen)
+    plt.show()
+
+    soluciones = soluciones.reset_index(drop=True)
+    soluciones.to_feather("solutions/param_ppl.feather")
 
