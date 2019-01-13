@@ -7,7 +7,7 @@ import scipy.stats as stats
 
 dataset = feather.read_dataframe("datasets/train.feather")
 parametros = dataset.groupby(["sku"]).agg({"demand":"mean","price":"mean"}).reset_index()
-restock_lag = 1
+restock_lag = 3
 
 estadisticos = pd.DataFrame()
 for n in range(3,31):

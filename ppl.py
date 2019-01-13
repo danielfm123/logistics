@@ -5,6 +5,7 @@ import numpy as np
 import multiprocessing
 import seaborn as sns
 import matplotlib.pyplot as plt
+pd.set_option('display.max_columns', None)
 
 #from functions import dataset_ppl
 #dataset = dataset_ppl.make_dataset(size = 30)
@@ -54,14 +55,14 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     #print("Tamano Ordenes")
     P = period
     for n, c in itertools.product(numero_orden, skues):
-        prob += orden[n][c] == nivel_restock[c] - stock[ P[n * periodo_restock - restock_lag] ][c]
+        prob += orden[n][c] == nivel_restock[c] - stock[ P[n * periodo_restock - restock_lag - 1] ][c]
 
     #print("Consistencia de Stock")
     for p, c in itertools.product(range(len(period)), skues):
         if P[p] % periodo_restock == 0:
-            prob += stock[P[p]][c] == stock[P[p-1]][c] - dataset.loc[P[p-1], c]["demand"] + orden[int(P[p] / periodo_restock)][c]
+            prob += stock[P[p]][c] == stock[P[p-1]][c] - venta_real[P[p-1]][c] + orden[int(P[p] / periodo_restock)][c]
         else:
-            prob += stock[P[p]][c] == stock[P[p-1]][c] - dataset.loc[P[p-1], c]["demand"]
+            prob += stock[P[p]][c] == stock[P[p-1]][c] - venta_real[P[p-1]][c]
 
     #print("resolviendo")
     if(solver == "coin"):
@@ -75,11 +76,10 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     print("Status:", LpStatus[prob.status])
     print(value(prob.objective))
 
-    #print("Generando Detalles")
-    #compilado = []
-    #for p, c in itertools.product(period, [133185]):
-    #for p, c in itertools.product(period, skues):
-    #    compilado.append(
+    print("Generando Detalles")
+    #detalle = []
+    #for c,p in itertools.product(skues,period):
+    #    detalle.append(
     #        collections.OrderedDict({
     #            "periodo":p,
     #            "sku":c,
@@ -96,6 +96,8 @@ def get_solution(dataset, periodo_restock = 7,restock_lag = 3,factor_dcto_anual 
     #            "nivel_restock": value(nivel_restock[c])
     #        })
     #    )
+    #detalle = pd.DataFrame(detalle)
+    #detalle.head(10)
 
     compilado = []
     for s in skues:
@@ -121,7 +123,7 @@ if __name__ == "__main__":
     for n in range(2,31):
         res = pool.apply_async(get_solution,kwds={"dataset" : dataset,
                                                   "periodo_restock" : n,
-                                                  "restock_lag" : 2,
+                                                  "restock_lag" : 4,
                                                   "factor_dcto_anual" : 0.5,
                                                   "margen" : 0.20,
                                                   "costo_fijo" : 20,

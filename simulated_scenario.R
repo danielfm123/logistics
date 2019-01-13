@@ -131,7 +131,7 @@ for(n in 1:nrow(casos)){
   simulacion = future({
     simular(dataset,
            restock = casos$restock[n],
-           restock_lag = 1,
+           restock_lag = 3,
            fractor_dcto_anual = 0.5,
            porcentaje_margen = 0.2,
            costo_fijo = 20,
@@ -147,10 +147,10 @@ for( n in 1:length(simulaciones)){
   },error = function(e) print(n))
 }
 
-costo_logistica
-margen_ventas
-costo_inventario
-margen
+# costo_logistica
+# margen_ventas
+# costo_inventario
+# margen
 
 aux = compilado %>% group_by(restock,tipo) %>%  summarise(margen = mean(margen))
 ggplot(aux,aes(restock,margen,color = tipo, group=tipo)) + geom_line()

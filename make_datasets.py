@@ -19,7 +19,7 @@ def make_dataset(days):
     return (simulation)
 
 
-for n in range(10):
+for n in range(30):
     dataset = make_dataset(360)
     dataset.to_feather("datasets/test_"+str(n)+".feather")
 
